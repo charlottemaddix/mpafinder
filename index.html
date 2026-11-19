@@ -451,7 +451,7 @@
             }))
             .filter(site => site.name && !isNaN(site.lat) && !isNaN(site.lon));
 
-          statusEl.textContent = `Ready — ${allSites.length} consultation sites loaded. Enter a Scottish postcode above.`;
+          statusEl.textContent = "";
           plotAllSites(allSites);
         },
         error: function () {
