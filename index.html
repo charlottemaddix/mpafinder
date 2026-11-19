@@ -641,6 +641,13 @@
 
     initMap();
     loadSheetData();
+
+function notifyParentHeight() {
+  const height = document.documentElement.scrollHeight;
+  window.parent.postMessage({ mpaFinderHeight: height + 30 }, "*");
+}
+new ResizeObserver(notifyParentHeight).observe(document.body);
+    
   </script>
 </body>
 </html>
