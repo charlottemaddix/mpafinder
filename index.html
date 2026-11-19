@@ -613,13 +613,9 @@
 
                 <div class="site-type">${escapeHtml(site.type || "Designated Marine Area")}</div>
 
-                <!-- 1. Our Campaign Advice (Tilted Pinball #ED5623) -->
-                <div class="advice-box">
-                  <span class="advice-box-title">Our Campaign Advice</span>
-                  ${adviceHtml}
-                </div>
+              
 
-                <!-- 2. Current Condition (Freesia #F4BF27 small accent) -->
+                <!-- Current Condition (Freesia #F4BF27 small accent) -->
                 <div class="condition-row">
                   <span class="detail-label">Current Condition:</span>
                   ${conditionHtml}
@@ -630,16 +626,21 @@
                   <span class="detail-label">Protected Features:</span> ${featuresHtml}
                 </div>
 
-                <!-- 3. Government Options in Consultation (Aqueous #38939d large accent) -->
+                <!-- Government Options in Consultation (Aqueous #38939d large accent) -->
                 <div class="gov-options-box">
                   <span class="gov-options-title">Government Options in Consultation</span>
                   ${formatGovOptions(site.govOptions)}
                 </div>
-
+                
+ <!-- Our Campaign Advice (Tilted Pinball #ED5623) -->
+                <div class="advice-box">
+                  <span class="advice-box-title">Our Campaign Advice</span>
+                  ${adviceHtml}
+                </div>
                 ${safeUrl ? `
                   <div class="card-footer">
                     <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" class="consult-link">
-                      View Scottish Government Consultation Document &rarr;
+                      View this site in Scottish Government consultation document &rarr;
                     </a>
                   </div>` : ""}
               </article>
