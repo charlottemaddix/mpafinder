@@ -643,10 +643,13 @@
     loadSheetData();
 
 function notifyParentHeight() {
-  const height = document.documentElement.scrollHeight;
-  window.parent.postMessage({ mpaFinderHeight: height + 30 }, "*");
+  const wrapper = document.querySelector(".finder-wrapper");
+  const height = wrapper ? wrapper.offsetHeight : document.documentElement.scrollHeight;
+  window.parent.postMessage({ mpaFinderHeight: height + 60 }, "*");
 }
-new ResizeObserver(notifyParentHeight).observe(document.body);
+
+new ResizeObserver(notifyParentHeight).observe(document.querySelector(".finder-wrapper"));
+window.addEventListener("load", notifyParentHeight);
     
   </script>
 </body>
