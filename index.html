@@ -157,11 +157,14 @@
       z-index: 1;
     }
 
-    .cards-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 18px;
-    }
+  .cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
 
     .site-card {
       background-color: var(--bg-white);
