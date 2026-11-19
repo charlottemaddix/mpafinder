@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scottish Inshore MPA and PMF Consultation Finder</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <style>
+    :root {
+      /* Brand Palette */
+      --brand-olive: #4E5E20;        /* Obscure Olive: Main headings & primary UI */
+      --brand-olive-hover: #3d4a18;
+      --brand-olive-tint: rgba(78, 94, 32, 0.12);
+
+      --brand-pinball: #ED5623;      /* Tilted Pinball: Subheadings & campaign advice accent */
+      --brand-pinball-bg: #fef5f2;
+      --brand-pinball-border: #fad3c6;
+
+      --brand-aqueous: #38939d;      /* Aqueous: Large accents & consultation options */
+      --brand-aqueous-bg: #f1f8f9;
+      --brand-aqueous-border: #c5e3e7;
+
+      --brand-freesia: #F4BF27;      /* Freesia: Small accents & condition badges */
+      --brand-freesia-bg: #fef9e7;
+
+      --brand-beige: #f7f5f0;        /* Warm Beige surface */
+      --brand-beige-border: #e2ddd3;
+      --brand-input-border: #d4cebe;
+
+      --text-dark: #1e293b;
+      --text-muted: #475569;
+      --bg-white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text-dark);
+      background-color: transparent;
+      line-height: 1.5;
+    }
+
+    .finder-wrapper {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    /* Search Panel */
+    .search-panel {
+      background-color: var(--brand-beige);
+      border: 1px solid var(--brand-beige-border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .search-label {
+      display: block;
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: var(--brand-olive);
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pc-input {
+      flex: 1 1 200px;
+      min-width: 0;
+      padding: 11px 14px;
+      font-size: 15px;
+      color: var(--text-dark);
+      background-color: var(--bg-white);
+      border: 1px solid var(--brand-input-border);
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .rad-select,
+    .cat-select {
+      flex: 0 0 auto;
+      padding: 11px 14px;
+      font-size: 15px;
+      color: var(--text-dark);
+      background-color: var(--bg-white);
+      border: 1px solid var(--brand-input-border);
+      border-radius: 6px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .pc-input:focus,
+    .rad-select:focus,
+    .cat-select:focus {
+      border-color: var(--brand-olive);
+      box-shadow: 0 0 0 3px var(--brand-olive-tint);
+    }
+
+    .search-btn {
+      flex: 0 0 auto;
+      padding: 11px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      background-color: var(--brand-olive);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background-color 0.2s ease;
+    }
+
+    .search-btn:hover {
+      background-color: var(--brand-olive-hover);
+    }
+
+    .search-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      min-height: 20px;
+    }
+
+    .status-error {
+      color: var(--brand-pinball);
+      font-weight: 700;
+    }
+
+    /* Map */
+    #mpa-map {
+      width: 100%;
+      height: 380px;
+      border-radius: 10px;
+      border: 1px solid var(--brand-beige-border);
+      background-color: var(--brand-beige);
+      margin-bottom: 20px;
+      z-index: 1;
+    }
+
+    /* Cards */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .site-card {
+      background-color: var(--bg-white);
+      border: 1px solid var(--brand-beige-border);
+      border-left: 5px solid var(--brand-olive);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    /* Obscure Olive (#4E5E20): Main Heading */
+    .site-title {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--brand-olive);
+    }
+
+    .badges {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-distance {
+      background-color: var(--brand-olive);
+      color: #ffffff;
+    }
+
+    /* Freesia (#F4BF27): Small Accent Badge */
+    .badge-category {
+      background-color: var(--brand-freesia);
+      color: var(--text-dark);
+    }
+
+    .site-type {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    /* Section 1: Our Campaign Advice — Tilted Pinball (#ED5623) Subheading & Accent */
+    .advice-box {
+      background-color: var(--brand-pinball-bg);
+      border: 1px solid var(--brand-pinball-border);
+      border-left: 4px solid var(--brand-pinball);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-size: 14px;
+    }
+
+    .advice-box-title {
+      color: var(--brand-pinball);
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    /* Section 2: Current Condition — Freesia (#F4BF27) Small Accent */
+    .condition-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .detail-label {
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .condition-pill {
+      display: inline-block;
+      background-color: var(--brand-freesia-bg);
+      border: 1.5px solid var(--brand-freesia);
+      color: var(--text-dark);
+      font-weight: 700;
+      font-size: 13px;
+      padding: 2px 10px;
+      border-radius: 6px;
+    }
+
+    .detail-block {
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .na-text {
+      color: var(--text-muted);
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    /* Section 3: Government Options in Consultation — Aqueous (#38939d) Large Accent */
+    .gov-options-box {
+      background-color: var(--brand-aqueous-bg);
+      border: 1px solid var(--brand-aqueous-border);
+      border-left: 4px solid var(--brand-aqueous);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .gov-options-title {
+      color: var(--brand-aqueous);
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .gov-options-box p {
+      margin: 4px 0;
+    }
+
+    .card-footer {
+      margin-top: 14px;
+    }
+
+    .consult-link {
+      display: inline-block;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--brand-aqueous);
+      text-decoration: none;
+      border-bottom: 2px solid var(--brand-aqueous);
+      padding-bottom: 2px;
+    }
+
+    .consult-link:hover {
+      color: var(--brand-olive);
+      border-color: var(--brand-olive);
+    }
+
+    /* Mobile Stacking */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .search-panel {
+        padding: 15px;
+      }
+      .controls-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .pc-input,
+      .rad-select,
+      .cat-select,
+      .search-btn {
+        width: 100%;
+      }
+      #mpa-map {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="finder-wrapper">
+    <div class="search-panel">
+      <label for="mpa-pc-in" class="search-label">Enter Scottish Postcode or Outcode:</label>
+      <div class="controls-row">
+        <input type="text" id="mpa-pc-in" class="pc-input" placeholder="e.g. IV26 2XE or PA34" />
+        <select id="mpa-rad-in" class="rad-select" aria-label="Search radius">
+          <option value="15">Within 15 Miles</option>
+          <option value="30" selected>Within 30 Miles</option>
+          <option value="50">Within 50 Miles</option>
+        </select>
+        <select id="mpa-cat-in" class="cat-select" aria-label="Site category">
+          <option value="ALL" selected>All Sites (MPAs & PMFs)</option>
+          <option value="MPA">MPAs / SACs / SPAs Only</option>
+          <option value="PMF">PMF Areas Only</option>
+        </select>
+        <button id="mpa-btn" type="button" class="search-btn">Search</button>
+      </div>
+    </div>
+
+    <div id="mpa-status" class="status-bar">Loading consultation sites...</div>
+    <div id="mpa-map"></div>
+    <div id="mpa-cards" class="cards-grid"></div>
+  </div>
+
+  <!-- Libraries: Leaflet, Turf.js, PapaParse -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js" crossorigin=""></script>
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js" crossorigin=""></script>
+
+  <script>
+    // =========================================================================
+    // 1. PASTE YOUR PUBLISHED GOOGLE SHEET CSV URL BELOW:
+    // =========================================================================
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQP_5Q-Tt-ICNXoKd-BqiWD8wBCU8nCSsDzEiamf5b0yuctvydK9C35_Ez8Gq3dUM207_Op5FRRLWAV/pub?gid=0&single=true&output=csv";
+
+    let allSites = [];
+    let map, markersLayer, searchCircle, userMarker;
+
+    const statusEl = document.getElementById("mpa-status");
+    const cardsEl = document.getElementById("mpa-cards");
+    const pcInput = document.getElementById("mpa-pc-in");
+    const radInput = document.getElementById("mpa-rad-in");
+    const catInput = document.getElementById("mpa-cat-in");
+    const searchBtn = document.getElementById("mpa-btn");
+
+    function initMap() {
+      map = L.map("mpa-map").setView([56.85, -4.4], 6);
+
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 18
+      }).addTo(map);
+
+      markersLayer = L.layerGroup().addTo(map);
+    }
+
+    function createOliveIcon() {
+      return L.divIcon({
+        className: "custom-olive-pin",
+        html: `<svg width="26" height="36" viewBox="0 0 26 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 0C5.82 0 0 5.82 0 13C0 22.75 13 36 13 36C13 36 26 22.75 26 13C26 5.82 20.18 0 13 0Z" fill="#4E5E20"/>
+                <circle cx="13" cy="13" r="5" fill="#F4BF27"/>
+              </svg>`,
+        iconSize: [26, 36],
+        iconAnchor: [13, 36],
+        popupAnchor: [0, -34]
+      });
+    }
+
+    function loadSheetData() {
+      if (!SHEET_CSV_URL || SHEET_CSV_URL.includes("PASTE_YOUR")) {
+        statusEl.innerHTML = '<span class="status-error">Setup required: Paste your published Google Sheet CSV URL into SHEET_CSV_URL in index.html.</span>';
+        return;
+      }
+
+      Papa.parse(SHEET_CSV_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: "greedy",
+        complete: function (results) {
+          allSites = results.data
+            .map(row => ({
+              name: (row.name || "").trim(),
+              category: (row.category || "").trim(),
+              type: (row.type || "").trim(),
+              lat: parseFloat(String(row.lat || "").trim()),
+              lon: parseFloat(String(row.lon || "").trim()),
+              statutory: (row.statutory || "").trim(),
+              pmf: (row.pmf || "").trim(),
+              currentCondition: (row.currentCondition || "").trim(),
+              regionUrl: (row.regionUrl || "").trim(),
+              campaignAdvice: (row.campaignAdvice || "").trim(),
+              govOptions: (row.govOptions || "").trim()
+            }))
+            .filter(site => site.name && !isNaN(site.lat) && !isNaN(site.lon));
+
+          statusEl.textContent = `Ready — ${allSites.length} consultation sites loaded. Enter a Scottish postcode above.`;
+          plotAllSites(allSites);
+        },
+        error: function () {
+          statusEl.innerHTML = '<span class="status-error">Could not load Google Sheet CSV. Ensure the sheet is published to the web as CSV.</span>';
+        }
+      });
+    }
+
+    function plotAllSites(sites) {
+      markersLayer.clearLayers();
+      const icon = createOliveIcon();
+      sites.forEach(site => {
+        const marker = L.marker([site.lat, site.lon], { icon });
+        marker.bindPopup(`<strong>${escapeHtml(site.name)}</strong><br><small>${escapeHtml(site.type || "Consultation Site")}</small>`);
+        markersLayer.addLayer(marker);
+      });
+    }
+
+    async function geocodePostcode(rawInput) {
+      const cleaned = rawInput.trim().replace(/\s+/g, "").toUpperCase();
+      if (!cleaned) throw new Error("Please enter a Scottish postcode or outcode.");
+
+      let res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(cleaned)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.result) {
+          return {
+            lat: data.result.latitude,
+            lon: data.result.longitude,
+            label: data.result.postcode
+          };
+        }
+      }
+
+      res = await fetch(`https://api.postcodes.io/outcodes/${encodeURIComponent(cleaned)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.result) {
+          return {
+            lat: data.result.latitude,
+            lon: data.result.longitude,
+            label: data.result.outcode
+          };
+        }
+      }
+
+      throw new Error(`Could not find postcode or outcode "${rawInput}".`);
+    }
+
+    function formatGovOptions(text) {
+      if (!text) {
+        return `<p class="na-text">Not available</p>`;
+      }
+      const escaped = escapeHtml(text);
+      if (escaped.includes("Option 1:") || escaped.includes("Single option consulted on:")) {
+        return escaped
+          .replace(/(Single option consulted on:)/g, "<p><strong>$1</strong>")
+          .replace(/(Option 1:)/g, "<p><strong>$1</strong>")
+          .replace(/(Option 2:)/g, "</p><p><strong>$1</strong>") + "</p>";
+      }
+      return `<p>${escaped}</p>`;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    async function handleSearch() {
+      const query = pcInput.value;
+      const radiusMiles = parseFloat(radInput.value);
+      const selectedCat = catInput.value;
+
+      searchBtn.disabled = true;
+      statusEl.textContent = "Searching...";
+      cardsEl.innerHTML = "";
+
+      try {
+        const origin = await geocodePostcode(query);
+        const originPoint = turf.point([origin.lon, origin.lat]);
+
+        const matches = allSites
+          .filter(site => selectedCat === "ALL" || site.category.toUpperCase() === selectedCat)
+          .map(site => {
+            const targetPoint = turf.point([site.lon, site.lat]);
+            const dist = turf.distance(originPoint, targetPoint, { units: "miles" });
+            return { ...site, distance: dist };
+          })
+          .filter(site => site.distance <= radiusMiles)
+          .sort((a, b) => a.distance - b.distance);
+
+        markersLayer.clearLayers();
+        if (searchCircle) map.removeLayer(searchCircle);
+        if (userMarker) map.removeLayer(userMarker);
+
+        userMarker = L.circleMarker([origin.lat, origin.lon], {
+          radius: 7,
+          fillColor: "#ED5623",
+          color: "#ffffff",
+          weight: 2,
+          fillOpacity: 1
+        }).addTo(map).bindPopup(`Search Center: <strong>${escapeHtml(origin.label)}</strong>`);
+
+        searchCircle = L.circle([origin.lat, origin.lon], {
+          radius: radiusMiles * 1609.34,
+          color: "#38939d",
+          weight: 2,
+          fillColor: "#38939d",
+          fillOpacity: 0.08
+        }).addTo(map);
+
+        const icon = createOliveIcon();
+        matches.forEach(site => {
+          const marker = L.marker([site.lat, site.lon], { icon });
+          marker.bindPopup(`<strong>${escapeHtml(site.name)}</strong><br>${site.distance.toFixed(1)} miles away`);
+          markersLayer.addLayer(marker);
+        });
+
+        map.fitBounds(searchCircle.getBounds(), { padding: [20, 20] });
+
+        statusEl.textContent = `Found ${matches.length} consultation site${matches.length === 1 ? "" : "s"} within ${radiusMiles} miles of ${origin.label}.`;
+
+        if (matches.length === 0) {
+          cardsEl.innerHTML = `<div class="site-card"><p style="margin:0;">No designated MPA or PMF consultation sites found within ${radiusMiles} miles of <strong>${escapeHtml(origin.label)}</strong>. Try expanding your radius to 50 miles.</p></div>`;
+        } else {
+          cardsEl.innerHTML = matches.map(site => {
+            let featuresHtml = "";
+            if (site.statutory && site.statutory !== "N/A (PMF Site)") {
+              featuresHtml = escapeHtml(site.statutory) + (site.pmf ? ` | PMFs: ${escapeHtml(site.pmf)}` : "");
+            } else if (site.pmf) {
+              featuresHtml = escapeHtml(site.pmf);
+            } else {
+              featuresHtml = `<span class="na-text">Not available</span>`;
+            }
+
+            const conditionHtml = site.currentCondition
+              ? `<span class="condition-pill">${escapeHtml(site.currentCondition)}</span>`
+              : `<span class="na-text">Not available</span>`;
+
+            const adviceHtml = site.campaignAdvice
+              ? escapeHtml(site.campaignAdvice)
+              : `<span class="na-text">Not available</span>`;
+
+            const safeUrl = site.regionUrl.startsWith("https://www.gov.scot/") ? site.regionUrl : "";
+
+            return `
+              <article class="site-card">
+                <div class="card-header">
+                  <h3 class="site-title">${escapeHtml(site.name)}</h3>
+                  <div class="badges">
+                    <span class="badge badge-distance">${site.distance.toFixed(1)} mi</span>
+                    ${site.category ? `<span class="badge badge-category">${escapeHtml(site.category)}</span>` : ""}
+                  </div>
+                </div>
+
+                <div class="site-type">${escapeHtml(site.type || "Designated Marine Area")}</div>
+
+                <!-- 1. Our Campaign Advice (Tilted Pinball #ED5623) -->
+                <div class="advice-box">
+                  <span class="advice-box-title">Our Campaign Advice</span>
+                  ${adviceHtml}
+                </div>
+
+                <!-- 2. Current Condition (Freesia #F4BF27 small accent) -->
+                <div class="condition-row">
+                  <span class="detail-label">Current Condition:</span>
+                  ${conditionHtml}
+                </div>
+
+                <!-- Protected Features -->
+                <div class="detail-block">
+                  <span class="detail-label">Protected Features:</span> ${featuresHtml}
+                </div>
+
+                <!-- 3. Government Options in Consultation (Aqueous #38939d large accent) -->
+                <div class="gov-options-box">
+                  <span class="gov-options-title">Government Options in Consultation</span>
+                  ${formatGovOptions(site.govOptions)}
+                </div>
+
+                ${safeUrl ? `
+                  <div class="card-footer">
+                    <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" class="consult-link">
+                      View Scottish Government Consultation Document &rarr;
+                    </a>
+                  </div>` : ""}
+              </article>
+            `;
+          }).join("");
+        }
+      } catch (err) {
+        statusEl.innerHTML = `<span class="status-error">${escapeHtml(err.message)}</span>`;
+      } finally {
+        searchBtn.disabled = false;
+      }
+    }
+
+    searchBtn.addEventListener("click", handleSearch);
+    pcInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") handleSearch();
+    });
+
+    initMap();
+    loadSheetData();
+  </script>
+</body>
+</html>
